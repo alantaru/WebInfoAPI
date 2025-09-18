@@ -1,0 +1,120 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.meuservidor'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Necesse Repository'
+        url = 'https://maven.necesse-game.com/'
+    }
+}
+
+dependencies {
+    // Necesse API - versão pode variar
+    compileOnly 'necesse:necesse:0.21.20'
+    
+    // OSHI para telemetria do sistema
+    implementation 'com.github.oshi:oshi-core:6.4.8'
+    
+    // Dependências para testes (opcional)
+    testImplementation 'junit:junit:4.13.2'
+}
+
+jar {
+    from configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    
+    manifest {
+        attributes(
+            'Main-Class': 'com.meuservidor.webapi.WebInfoAPI'
+        )
+    }
+    
+    // Incluir recursos
+    from('src/main/resources') {
+        include '**/*'
+    }
+}
+
+// Task para compilar e testar
+task testBuild(type: JavaCompile) {
+    source = sourceSets.main.java
+    classpath = configurations.compileClasspath
+    destinationDirectory = file("$buildDir/test-classes")
+    
+    doLast {
+        println "✅ Compilação bem-sucedida!"
+        println "📁 Classes compiladas em: $destinationDirectory"
+        
+        // Verificar se o arquivo de configuração foi incluído
+        def configFile = file("$buildDir/resources/main/webapi.properties")
+        if (configFile.exists()) {
+            println "✅ Arquivo webapi.properties incluído no build"
+        } else {
+            println "❌ Arquivo webapi.properties NÃO encontrado"
+        }
+    }
+}
+
+// Task para verificar configurações
+task checkConfig {
+    doLast {
+        def configFile = file('src/main/resources/webapi.properties')
+        if (configFile.exists()) {
+            println "✅ Arquivo de configuração encontrado:"
+            println "📍 Localização: ${configFile.absolutePath}"
+            println "📄 Conteúdo:"
+            configFile.eachLine { line ->
+                if (!line.startsWith('#') && line.trim()) {
+                    println "   $line"
+                }
+            }
+        } else {
+            println "❌ Arquivo webapi.properties não encontrado!"
+        }
+    }
+}
+
+// Task para validar estrutura do projeto
+task validateProject {
+    doLast {
+        def requiredFiles = [
+            'src/main/java/com/meuservidor/webapi/WebInfoAPI.java',
+            'src/main/resources/webapi.properties',
+            'src/main/resources/mod.info'
+        ]
+        
+        println "🔍 Validando estrutura do projeto..."
+        
+        requiredFiles.each { filePath ->
+            def file = file(filePath)
+            if (file.exists()) {
+                println "✅ $filePath"
+            } else {
+                println "❌ $filePath - AUSENTE"
+            }
+        }
+        
+        println "\n📊 Resumo da validação:"
+        def existingFiles = requiredFiles.count { file(it).exists() }
+        println "   Arquivos encontrados: $existingFiles/${requiredFiles.size()}"
+        
+        if (existingFiles == requiredFiles.size()) {
+            println "🎉 Projeto está completo e pronto para compilação!"
+        } else {
+            println "⚠️  Alguns arquivos estão ausentes. Verifique a estrutura."
+        }
+    }
+}
+
+// Executar validações antes do build
+build.dependsOn validateProject
+build.dependsOn checkConfig

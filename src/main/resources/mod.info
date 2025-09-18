@@ -1,0 +1,7 @@
+{
+  "id": "webinfoapi",
+  "name": "Web Info API",
+  "author": "[Alantaru/Prismma Eternal]",
+  "version": "1.0.0",
+  "description": "Expõe dados do servidor via uma API HTTP para integração com websites."
+}
